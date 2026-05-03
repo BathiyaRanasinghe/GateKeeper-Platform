@@ -1,0 +1,29 @@
+{
+  "name": "@gatekeeper/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@fastify/redis": "^7.0.0",
+    "@gatekeeper/config-validator": "workspace:*",
+    "@gatekeeper/types": "workspace:*",
+    "@supabase/supabase-js": "^2.49.0",
+    "fastify": "^5.3.0",
+    "fastify-plugin": "^5.0.0",
+    "ioredis": "^5.6.0",
+    "jose": "^5.10.0",
+    "undici": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}

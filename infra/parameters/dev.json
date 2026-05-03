@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environment": { "value": "dev" },
+    "location": { "value": "australiaeast" },
+    "frontendImageTag": { "value": "latest" },
+    "gatewayImageTag": { "value": "latest" },
+    "supabaseUrl": { "value": "https://YOUR_PROJECT.supabase.co" },
+    "supabaseAnonKey": { "value": "SET_IN_PIPELINE_OR_KEY_VAULT" },
+    "supabaseServiceRoleKey": { "value": "SET_IN_PIPELINE_OR_KEY_VAULT" }
+  }
+}
