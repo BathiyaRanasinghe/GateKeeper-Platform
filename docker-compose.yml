@@ -52,6 +52,14 @@ services:
     # Scale with: docker compose up --scale gateway=3
     # Nginx uses Docker DNS round-robin to load-balance across replicas
 
+  test-backend:
+    build:
+      context: .
+      dockerfile: apps/test-backend/Dockerfile
+    expose:
+      - "4000"
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     expose:

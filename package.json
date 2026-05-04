@@ -5,9 +5,14 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "get-token": "tsx --env-file=.env scripts/get-supabase-token.ts",
+    "create-api-key": "tsx --env-file=.env scripts/create-api-key.ts"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.49.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
     "turbo": "^2.5.0",
     "typescript": "^5.8.0"
   }

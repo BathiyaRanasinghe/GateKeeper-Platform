@@ -7,7 +7,8 @@ export function matchRoute(config: GatewayConfig, requestPath: string): Route | 
   );
 
   for (const route of sorted) {
-    if (requestPath === route.path || requestPath.startsWith(route.path + '/')) {
+    const normalizedRoute = route.path.replace(/\/+$/, '');
+    if (requestPath === normalizedRoute || requestPath.startsWith(normalizedRoute + '/')) {
       return route;
     }
   }
