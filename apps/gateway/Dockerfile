@@ -5,7 +5,7 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy workspace manifests
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/types/package.json ./packages/types/
 COPY packages/config-validator/package.json ./packages/config-validator/
 COPY apps/gateway/package.json ./apps/gateway/
@@ -23,6 +23,10 @@ RUN pnpm --filter @gatekeeper/types build
 RUN pnpm --filter @gatekeeper/config-validator build
 RUN pnpm --filter @gatekeeper/gateway build
 
+# Create a self-contained deployment folder with flattened node_modules
+# (pnpm uses symlinks in-place; deploy resolves them into a portable directory)
+RUN pnpm --filter @gatekeeper/gateway deploy --prod --legacy /prod/gateway
+
 # ── Production image ──────────────────────────────────────────────────────────
 FROM node:24-alpine AS runner
 WORKDIR /app
@@ -30,7 +34,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/apps/gateway/dist ./dist
-COPY --from=builder /app/apps/gateway/node_modules ./node_modules
+COPY --from=builder /prod/gateway/node_modules ./node_modules
 COPY --from=builder /app/apps/gateway/package.json ./
 
 EXPOSE 3001

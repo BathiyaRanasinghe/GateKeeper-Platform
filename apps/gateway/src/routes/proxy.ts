@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from 'fastify';
+import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { extractConfig } from '../middleware/extract-config';
 import { matchRoute } from '../middleware/match-route';
 import { validateAuth } from '../middleware/auth-validator';
@@ -8,22 +8,22 @@ import { forwardRequest } from '../proxy/forwarder';
 
 const proxyRoute: FastifyPluginAsync = async (fastify) => {
   fastify.setErrorHandler((error, _request, reply) => {
-    const status = (error as { statusCode?: number }).statusCode ?? 500;
-    const retryAfter = (error as { retryAfter?: number }).retryAfter;
+    const err = error as Error & { statusCode?: number; retryAfter?: number };
+    const status = err.statusCode ?? 500;
 
-    if (retryAfter) {
-      reply.header('Retry-After', String(retryAfter));
+    if (err.retryAfter) {
+      reply.header('Retry-After', String(err.retryAfter));
     }
 
-    reply.code(status).send({ error: error.message });
+    reply.code(status).send({ error: err.message });
   });
 
-  // Catch-all: /:projectId/*
-  fastify.all('/:projectId/*', async (request, reply) => {
-    const { projectId } = request.params as { projectId: string };
-    const wildcardPath = (request.params as { '*': string })['*'];
-    const remainingPath = '/' + wildcardPath;
-
+  async function handleProxy(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    projectId: string,
+    remainingPath: string,
+  ) {
     // 1. Load config (Redis cache → Supabase on miss)
     const config = await extractConfig(fastify, projectId);
     if (!config) {
@@ -63,7 +63,6 @@ const proxyRoute: FastifyPluginAsync = async (fastify) => {
     // 7. Return backend response
     const responseHeaders: Record<string, string> = {};
     upstream.headers.forEach((value, key) => {
-      // Strip hop-by-hop headers
       const hopByHop = ['transfer-encoding', 'connection', 'keep-alive', 'upgrade', 'proxy-authenticate'];
       if (!hopByHop.includes(key.toLowerCase())) {
         responseHeaders[key] = value;
@@ -71,6 +70,19 @@ const proxyRoute: FastifyPluginAsync = async (fastify) => {
     });
 
     return reply.code(upstream.status).headers(responseHeaders).send(upstream.body);
+  }
+
+  // /:projectId/some/path
+  fastify.all('/:projectId/*', async (request, reply) => {
+    const { projectId } = request.params as { projectId: string };
+    const wildcardPath = (request.params as { '*': string })['*'];
+    return handleProxy(request, reply, projectId, '/' + wildcardPath);
+  });
+
+  // /:projectId  (no trailing path — treat as /)
+  fastify.all('/:projectId', async (request, reply) => {
+    const { projectId } = request.params as { projectId: string };
+    return handleProxy(request, reply, projectId, '/');
   });
 };
 

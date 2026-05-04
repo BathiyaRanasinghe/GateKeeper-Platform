@@ -29,7 +29,9 @@ export async function forwardRequest(
     headers: forwardHeaders,
     body: ['GET', 'HEAD'].includes(request.method.toUpperCase())
       ? undefined
-      : (request.body as BodyInit | undefined),
+      : typeof request.body === 'string' || request.body instanceof Buffer
+        ? (request.body as string)
+        : JSON.stringify(request.body),
     // @ts-ignore — undici supports this
     duplex: 'half',
   });

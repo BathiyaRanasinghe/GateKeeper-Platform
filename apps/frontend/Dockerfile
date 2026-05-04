@@ -1,11 +1,18 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
+# NEXT_PUBLIC_* vars are baked into the client bundle at build time — must be
+# passed as build args, not runtime env vars.
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy workspace manifests
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/types/package.json ./packages/types/
 COPY packages/config-validator/package.json ./packages/config-validator/
 COPY apps/frontend/package.json ./apps/frontend/
