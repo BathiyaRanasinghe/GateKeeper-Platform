@@ -5,6 +5,7 @@ import { validateAuth } from '../middleware/auth-validator';
 import { applyRateLimit } from '../middleware/rate-limiter';
 import { signWithHmac } from '../middleware/hmac-signer';
 import { forwardRequest } from '../proxy/forwarder';
+import { writeLog } from '../cache/config-cache';
 
 const proxyRoute: FastifyPluginAsync = async (fastify) => {
   fastify.setErrorHandler((error, _request, reply) => {
@@ -24,6 +25,8 @@ const proxyRoute: FastifyPluginAsync = async (fastify) => {
     projectId: string,
     remainingPath: string,
   ) {
+    const startMs = Date.now();
+
     // 1. Load config (Redis cache → Supabase on miss)
     const config = await extractConfig(fastify, projectId);
     if (!config) {
@@ -67,6 +70,16 @@ const proxyRoute: FastifyPluginAsync = async (fastify) => {
       if (!hopByHop.includes(key.toLowerCase())) {
         responseHeaders[key] = value;
       }
+    });
+
+    // 8. Write log entry fire-and-forget (never blocks the response)
+    writeLog({
+      project_id: projectId,
+      route_path: route.path,
+      method: request.method,
+      status_code: upstream.status,
+      latency_ms: Date.now() - startMs,
+      ip: request.ip,
     });
 
     return reply.code(upstream.status).headers(responseHeaders).send(upstream.body);

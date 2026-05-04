@@ -41,3 +41,17 @@ export async function getConfig(
 export async function invalidateConfig(redis: Redis, projectId: string): Promise<void> {
   await redis.del(`config:${projectId}`);
 }
+
+export function writeLog(entry: {
+  project_id: string;
+  route_path: string;
+  method: string;
+  status_code: number;
+  latency_ms: number;
+  ip: string;
+}): void {
+  // Fire-and-forget — never await so it never slows down the response
+  supabase.from('gateway_logs').insert(entry).then(({ error }) => {
+    if (error) console.error('[log-writer]', error.message);
+  });
+}
